@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from collections import defaultdict, deque
+import heapq
 
 def bfs(graph, start_node):
     # graph: 邻接表, {'node': [sub_node1, sub_node2, ...]}
@@ -597,3 +598,79 @@ def find_euler_path_directed(graph):
             path.append(stack.pop())
 
     return path[::-1]
+
+
+class UnionFind(object):
+    # 并查集,输入是graph的nodes
+    def __init__(self, nodes):
+        self.parent = {node: node for node in nodes}
+        self.rank = {node: 0 for node in nodes}
+
+    def find(self, node):
+        # 找到根节点
+        if self.parent[node] != node:
+            self.parent[node] = self.find(self.parent[node])
+        return self.parent[node]
+
+    def union(self, node1, node2):
+        root_node1 = self.find(node1)
+        root_node2 = self.find(node2)
+
+        if root_node1 == root_node2:
+            return
+        
+        if self.rank[root_node1] > self.rank[root_node2]:
+            self.parent[root_node2] = root_node1
+        else:
+            self.parent[root_node1] = root_node2
+            if self.rank[root_node1] == self.rank[root_node2]:
+                self.rank[root_node2] += 1
+
+
+def kruskal_mst(graph, weight):
+    # kruskal minimum spanning tree
+    # 无向图
+    # graph: {u: [v1, v2,...]}
+    # weight: {(u, v): w1}
+    mst = []
+    if not graph:
+        return mst
+    
+    uf = UnionFind(graph.keys())
+    edges = []
+    for u in graph.keys():
+        for v in graph[u]:
+            edges.append((weight[(u, v)], u, v))
+    
+    edges.sort()
+    for w, u, v in edges:
+        if uf.find(u) != uf.find(v):
+            uf.union(u, v)
+            mst.append((u, v, w))
+    return mst
+
+
+def prim_mst(graph, weight):
+    mst = []
+    if not graph:
+        return mst
+
+    start_node = graph.keys()[0]
+    edges = []
+    for sub_node, w in zip(graph[start_node], weight[start_node]):
+        edges.append((w, start_node, sub_node))
+    heapq.heapify(edges)
+
+    visited = set()
+    visited.add(start_node)
+    # 可以在判断最小生成树构造完成时提前结束,此时edges不一定为空
+    while (len(edges) > 0) and (len(mst) < len(graph)-1):
+        w, u, v = heapq.heappop(edges)
+        if v not in visited:
+            mst.append((u, v, w))
+            visited.append()
+            for sub_node, sub_w in zip(graph[v], weight[v]):
+                if sub_node not in visited:
+                    heapq.heappush(edges, (sub_w, v, sub_node))
+    
+    return mst
