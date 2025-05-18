@@ -674,3 +674,52 @@ def prim_mst(graph, weight):
                     heapq.heappush(edges, (sub_w, v, sub_node))
     
     return mst
+
+
+def dijstra_search(graph, weight, s):
+    # 单源最短路径, o((|E|+|V|)lg|V|)
+    # 有向图,权重为正,有无回路均可
+    # 边权重为正的无向图是上述有向图的特例
+    d = defaultdict(float('inf'))
+    d[s] = 0
+    q = []
+    for v, w in zip(graph[s], weight[w]):
+        q.append([w, v])
+    heapq.heapify(q)
+
+    visited = set()
+    visited.add(s)
+    while len(q) > 0:
+        _, u = heapq.heappop(q)
+        visited.add(u)
+
+        for v, w in zip(graph[u], weight[u]):
+            if v in visited:
+                continue
+            d[v] = min(d[v], d[u] + w)
+            heapq.heappush(q, [d[v], v])
+    
+    return d
+
+
+def bellman_ford_search(graph, weight, s):
+    # 单源最短路径, o(|E|*|V|)
+    # 动态规划计算距离s 最多|V|-1个节点路径的最短距离
+    # 计算距离和是否存在负权回路
+    d = defaultdict(float('inf'))
+    d[s] = 0
+
+    # 更新d
+    for _ in range(len(graph)-1):
+        for u in range(graph.keys()):
+            for v, w in range(graph[u], weight[u]):
+                d[v] = min(d[v], d[u] + w)
+    
+    # 检验是否存在负权回路
+    # 如果继续迭代,d[v]仍能更新则存在负权回路
+    for u in range(graph.keys()):
+        for v, w in range(graph[u], weight[u]):
+            if d[v] > d[u] + w:
+                return d, False
+    
+    return d, True
